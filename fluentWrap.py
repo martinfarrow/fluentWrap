@@ -1,3 +1,5 @@
+import re
+
 class fluentWrap():
     """Wrapper class to create iterable objects from collections
        of list, dicts and other iterables"""
