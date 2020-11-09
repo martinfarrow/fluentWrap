@@ -7,6 +7,6 @@ setup(name='fluentWrap',
       description='A wrapper for iterable items to create a fluent type object interface',
       author='Martin Farrow',
       author_email='fluentWrap@dibley.net',
-      packages=find_packages(exclude=["*.tests", "*.tests.*", "tests.*", "tests"]),
+      py_modules=['fluentWrap'],
       license='LICENSE',
     )
