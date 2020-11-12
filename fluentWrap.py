@@ -23,7 +23,7 @@ class fluentWrap():
                 if isinstance(part, (dict, list)):
                     newitem.append(fluentWrap(part))
                 else:
-                    newitem.append(item)
+                    newitem.append(part)
             self.__list = newitem
         else:
             for part in item:
