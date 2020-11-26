@@ -1,12 +1,12 @@
 import re
 
 class fluentWrap():
-    """Wrapper class to create iterable objects from collections
+    """Wrapper class to create fluent style iterable objects from collections
        of list, dicts and other iterables"""
 
     is_attribute = re.compile('^[^_]')
 
-    def __init__(self, item, raiseOnMissing=False):
+    def __init__(self, item, substituteDot='_', raiseOnMissing=False):
 
         self.__raiseOnMissing = raiseOnMissing
 
@@ -32,8 +32,7 @@ class fluentWrap():
                     result = fluentWrap(cand)
                 else:
                     result = cand
-                self.__dict__[part] = result
-
+                self.__dict__[str(part).replace(".", substituteDot)] = result
 
     def __add__(self, other):
         """Plus operator overload"""
@@ -77,7 +76,7 @@ class fluentWrap():
 
     def __str__(self):
         """Human readable string representation of object - note with recursion"""
-        ret="FluentObject("
+        ret="FluentWrap("
         comma=""
         for item in self.__dict__:
             if fluentWrap.is_attribute.match(item):
@@ -88,33 +87,63 @@ class fluentWrap():
         ret+=")"
         return ret
 
+    def prettyString(self, leader=" ", indent=4, currentIndent = 0):
+        """FluentWraps simple version of pretty print"""
+        spacing = leader * currentIndent
+        itemSpacing = leader * (currentIndent + indent)
+        ret="FluentWrap("
+        newline = "\n"
+        for item in self.__dict__:
+            if fluentWrap.is_attribute.match(item):
+                ret += newline
+                newline = ""
+                if isinstance(self.__dict__[item], fluentWrap):
+                    ret+="{}{}={}".format(itemSpacing, item, self.__dict__[item].prettyString(leader, indent, (currentIndent+indent)))
+                else:
+                    ret+="{}{}={}\n".format(itemSpacing, item, str(self.__dict__[item]))
+        if '_fluentWrap__list' in self.__dict__:
+            count = 0
+            for item in self.__dict__['_fluentWrap__list']:
+                ret += newline
+                newline = ""
+                if isinstance(item, fluentWrap):
+                    ret+="{}[{}]={}".format(itemSpacing, count, item.prettyString(leader, indent, (currentIndent+indent)))
+                else:
+                    ret+="{}[{}]={}\n".format(itemSpacing, count, str(item))
+                count += 1
+        if newline == "" :
+            ret+= spacing + ")\n"
+        else:
+            ret+= ")\n"
+        return ret
+
     def getKeys(self):
-        """ Return the name of the all the keys in the top level object """
+        """ Return the name of the all the attributes in the top level object """
         return [ name for name in self.__dict__ if fluentWrap.isattrib.match(name) ]
 
     def getKey(self, key):
-        """Return the named item"""
+        """Return the named item, from the object attributes"""
         if key in self.getKeys:
             return self.__dict__[key]
         else:
             raise AttributeError("Key ({}) does not exist".format(key))
 
-    def get(self, position):
-        """Return item in position from encased list"""
+    def get(self, index):
+        """Return item in position index from encased list"""
 
-        if not isinstance(position, int):
-            raise ValueError("Position must be an int")
+        if not isinstance(index, int):
+            raise ValueError("Index must be an int")
 
-        if position < 0:
-            raise IndexError("Negitive indicies are not allowed")
+        if index < 0:
+            raise IndexError("Negative indicies are not allowed")
 
         l = len(self.__dict__['_fluentWrap__list'])
 
         if '_fluentWrap__list' in self.__dict__:
-            if position >= l:
+            if index >= l:
                 raise IndexError("Index out of range")
             else:
-                return self.__dict__['_fluentWrap__list'][position]
+                return self.__dict__['_fluentWrap__list'][index]
         return None
 
     def len(self):
