@@ -6,9 +6,12 @@ class fluentWrap():
 
     is_attribute = re.compile('^[^_]')
 
-    def __init__(self, item, substituteDot='_', raiseOnMissing=False):
+    def __init__(self, item=None, substituteDot=None, raiseOnMissing=False):
 
         self.__raiseOnMissing = raiseOnMissing
+
+        if item is None:
+            return
 
         # item has to be iterable
 
@@ -32,7 +35,10 @@ class fluentWrap():
                     result = fluentWrap(cand)
                 else:
                     result = cand
-                self.__dict__[str(part).replace(".", substituteDot)] = result
+                if substituteDot is not None:
+                    self.__dict__[str(part).replace(".", substituteDot)] = result
+                else:
+                    self.__dict__[part] = result
 
     def __add__(self, other):
         """Plus operator overload"""
@@ -87,6 +93,25 @@ class fluentWrap():
         ret+=")"
         return ret
 
+    def checkPath(self, path):
+        """Check the path exists"""
+        return(self.checkPathByList(path.split('.')))
+
+    def checkPathByList(self, path):
+        """Check that the path exists by elements of an array"""
+        itemname = path.pop(0)
+        if itemname in self.__dict__:
+            if len(path) == 0:
+                return True
+            item = self.__dict__[itemname]
+            if isinstance(item, fluentWrap):
+                return item.checkPathByList(path)
+            else:
+                return False
+        else:
+            return False
+
+
     def prettyString(self, leader=" ", indent=4, currentIndent = 0):
         """FluentWraps simple version of pretty print"""
         spacing = leader * currentIndent
@@ -117,13 +142,23 @@ class fluentWrap():
             ret+= ")\n"
         return ret
 
+    def deleteKey(self, key):
+        self.__dict__.pop(key, None)
+
+    def append(self, value):
+
+        if '_fluentWrap__list' not in self.__dict__:
+            self.__dict__['_fluentWrap__list']=list()
+
+        self.__dict__['_fluentWrap__list'].append(value)
+
     def getKeys(self):
         """ Return the name of the all the attributes in the top level object """
-        return [ name for name in self.__dict__ if fluentWrap.isattrib.match(name) ]
+        return [ name for name in self.__dict__ if fluentWrap.is_attribute.match(name) ]
 
     def getKey(self, key):
         """Return the named item, from the object attributes"""
-        if key in self.getKeys:
+        if key in self.getKeys():
             return self.__dict__[key]
         else:
             raise AttributeError("Key ({}) does not exist".format(key))
